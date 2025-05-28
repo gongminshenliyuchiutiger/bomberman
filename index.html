@@ -1,0 +1,1721 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>彈彈的愛上遊戲系統</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&family=Bungee&display=swap');
+        
+        html {
+            scroll-behavior: smooth; /* Optional: for smoother scrolling */
+        }
+
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background: linear-gradient(135deg, #1a0033, #3a0068);
+            color: #fff;
+            overflow-y: auto; /* Allow vertical scroll if content is too long */
+            overflow-x: hidden; /* Prevent horizontal scroll */
+            margin: 0;
+            padding: 0;
+        }
+        
+        .game-title {
+            font-family: 'Bungee', cursive;
+            text-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff, 0 0 30px #ff00ff;
+            background: linear-gradient(to right, #ff9900, #ff00ff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: pulse-title 2s infinite;
+        }
+        
+        @keyframes pulse-title {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .game-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            aspect-ratio: 1/1;
+            margin: 0 auto;
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ffffff' fill-opacity='0.05' fill-rule='evenodd'/%3E%3C/svg%3E"),
+                          linear-gradient(135deg, #240046, #3c096c);
+            border: 8px solid;
+            border-image: linear-gradient(45deg, #ff9900, #ff00ff, #00ffff) 1;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(255, 0, 255, 0.5);
+        }
+        
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(11, 1fr);
+            grid-template-rows: repeat(11, 1fr);
+            width: 100%;
+            height: 100%;
+        }
+        
+        .cell {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            box-sizing: border-box;
+            transition: all 0.2s ease;
+        }
+        
+        .wall {
+            background: linear-gradient(135deg, #5a189a, #7b2cbf);
+            border: 2px solid #9d4edd;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+        
+        .block {
+            background: linear-gradient(135deg, #ff9e00, #ff4d00);
+            border: 2px solid #ffbd00;
+            box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.3);
+            animation: float 3s infinite ease-in-out;
+        }
+        
+        @keyframes float {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-2px); }
+            100% { transform: translateY(0); }
+        }
+        
+        .empty {
+            background-color: rgba(22, 33, 62, 0.2);
+            border: 1px dotted rgba(255, 255, 255, 0.1);
+        }
+        
+        .player {
+            position: absolute;
+            width: 80%;
+            height: 80%;
+            top: 10%;
+            left: 10%;
+            z-index: 10;
+            animation: player-idle 1s infinite alternate;
+        }
+        
+        .player-body {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #ff0080, #ff00ff);
+            border-radius: 50%;
+            box-shadow: 0 0 15px rgba(255, 0, 255, 0.7);
+        }
+        
+        .player-face {
+            position: absolute;
+            width: 60%;
+            height: 60%;
+            top: 20%;
+            left: 20%;
+            border-radius: 50%;
+            background-color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .player-eyes {
+            position: relative;
+            width: 70%;
+            height: 30%;
+        }
+        
+        .player-eye {
+            position: absolute;
+            width: 30%;
+            height: 100%;
+            background-color: #000;
+            border-radius: 50%;
+            top: 0;
+        }
+        
+        .player-eye.left {
+            left: 10%;
+        }
+        
+        .player-eye.right {
+            right: 10%;
+        }
+        
+        .player-mouth {
+            position: absolute;
+            width: 40%;
+            height: 15%;
+            background-color: #000;
+            border-radius: 10px;
+            bottom: 25%;
+            left: 30%;
+        }
+        
+        @keyframes player-idle {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.1); }
+        }
+        
+        @keyframes player-hit {
+            0% { opacity: 1; }
+            25% { opacity: 0.5; }
+            50% { opacity: 1; }
+            75% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .bomb {
+            position: absolute;
+            width: 70%;
+            height: 70%;
+            top: 15%;
+            left: 15%;
+            z-index: 5;
+            animation: bomb-pulse 0.5s infinite alternate;
+        }
+        
+        .bomb-body {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 30% 30%, #444, #000);
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.7);
+        }
+        
+        .bomb-fuse {
+            position: absolute;
+            width: 20%;
+            height: 40%;
+            top: -30%;
+            left: 40%;
+            background: linear-gradient(to bottom, #ffdd00, #ff9900);
+            border-radius: 10px;
+            transform: rotate(-10deg);
+        }
+        
+        .bomb-spark {
+            position: absolute;
+            width: 30%;
+            height: 30%;
+            top: -40%;
+            left: 35%;
+            background: radial-gradient(circle at center, #fff, #ffdd00);
+            border-radius: 50%;
+            filter: blur(2px);
+            animation: spark 0.3s infinite alternate;
+        }
+        
+        .bomb-timer {
+            position: absolute;
+            width: 50%;
+            height: 50%;
+            top: 25%;
+            left: 25%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ff0000;
+            font-weight: bold;
+            font-size: 1.2rem; /* Using rem for better scalability */
+            text-shadow: 0 0 5px #ff0000;
+        }
+        
+        @keyframes bomb-pulse {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.1); }
+        }
+        
+        @keyframes spark {
+            0% { opacity: 0.5; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1.2); }
+        }
+        
+        .explosion {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            z-index: 8;
+            animation: explode 0.5s forwards;
+        }
+        
+        .explosion-center {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, #fff, #ffdd00, #ff4d00);
+            border-radius: 50%;
+            transform: scale(0);
+            animation: explosion-grow 0.5s forwards;
+        }
+        
+        @keyframes explode {
+            0% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+        
+        @keyframes explosion-grow {
+            0% { transform: scale(0); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
+        
+        .monster {
+            position: absolute;
+            width: 80%;
+            height: 80%;
+            top: 10%;
+            left: 10%;
+            z-index: 9;
+            animation: monster-move 2s infinite alternate;
+        }
+        
+        .monster-body {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #00cc00, #008800);
+            border-radius: 50%;
+            box-shadow: 0 0 15px rgba(0, 204, 0, 0.7);
+        }
+        
+        .monster-face {
+            position: absolute;
+            width: 60%;
+            height: 60%;
+            top: 20%;
+            left: 20%;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .monster-eyes {
+            position: relative;
+            width: 70%;
+            height: 30%;
+        }
+        
+        .monster-eye {
+            position: absolute;
+            width: 30%;
+            height: 100%;
+            background-color: #ff0000;
+            border-radius: 50%;
+            top: 0;
+        }
+        
+        .monster-eye.left {
+            left: 10%;
+        }
+        
+        .monster-eye.right {
+            right: 10%;
+        }
+        
+        .monster-mouth {
+            position: absolute;
+            width: 60%;
+            height: 20%;
+            background-color: #000;
+            border-radius: 0 0 50% 50%;
+            bottom: 20%;
+            left: 20%;
+        }
+        
+        .monster-teeth {
+            position: absolute;
+            width: 15%;
+            height: 40%;
+            background-color: white;
+            bottom: 0;
+        }
+        
+        .monster-teeth.left {
+            left: 25%;
+        }
+        
+        .monster-teeth.right {
+            right: 25%;
+        }
+        
+        @keyframes monster-move {
+            0% { transform: translateY(0) rotate(0); }
+            100% { transform: translateY(-5px) rotate(5deg); }
+        }
+        
+        @keyframes monster-die {
+            0% { transform: scale(1) rotate(0); opacity: 1; }
+            50% { transform: scale(1.5) rotate(180deg); opacity: 0.5; }
+            100% { transform: scale(0) rotate(360deg); opacity: 0; }
+        }
+        
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 8px;
+            width: 180px; /* Fixed size, could be responsive with rem/em if needed */
+            height: 180px; /* Fixed size */
+            margin: 20px auto;
+        }
+        
+        .control-btn {
+            background: linear-gradient(135deg, #5a189a, #7b2cbf);
+            border: 3px solid #9d4edd;
+            border-radius: 12px;
+            color: #fff;
+            font-weight: bold;
+            font-size: 1.2rem; /* Using rem */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s;
+            box-shadow: 0 4px 0 #3c096c, 0 0 10px rgba(157, 78, 221, 0.5);
+        }
+        
+        .control-btn:active {
+            background: linear-gradient(135deg, #7b2cbf, #9d4edd);
+            transform: translateY(4px);
+            box-shadow: 0 0 0 #3c096c, 0 0 5px rgba(157, 78, 221, 0.5);
+        }
+        
+        .bomb-btn {
+            background: linear-gradient(135deg, #ff4d00, #ff9e00);
+            border: 3px solid #ffbd00;
+            box-shadow: 0 4px 0 #ff4d00, 0 0 10px rgba(255, 77, 0, 0.5);
+        }
+        
+        .bomb-btn:active {
+            background: linear-gradient(135deg, #ff9e00, #ffbd00);
+            box-shadow: 0 0 0 #ff4d00, 0 0 5px rgba(255, 77, 0, 0.5);
+        }
+        
+        .game-over, .level-complete, .game-complete {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 20;
+            font-size: 2.5rem; /* Using rem */
+            font-weight: bold;
+            color: #ff00ff;
+            text-shadow: 0 0 10px #ff00ff;
+            display: none; /* Initially hidden */
+        }
+        
+        .level-complete {
+            color: #00ffff;
+            text-shadow: 0 0 10px #00ffff;
+        }
+        
+        .game-complete {
+            color: #ffdd00;
+            text-shadow: 0 0 10px #ffdd00;
+        }
+        
+        .btn {
+            margin-top: 20px;
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #ff9900, #ff00ff);
+            color: #fff;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.2rem; /* Using rem */
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 5px 0 #9d4edd, 0 0 20px rgba(255, 0, 255, 0.5);
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 0 #9d4edd, 0 0 30px rgba(255, 0, 255, 0.7);
+        }
+        
+        .btn:active {
+            transform: translateY(5px);
+            box-shadow: 0 0 0 #9d4edd, 0 0 10px rgba(255, 0, 255, 0.3);
+        }
+        
+        .next-level-btn {
+            background: linear-gradient(135deg, #00ccff, #00ffff);
+            box-shadow: 0 5px 0 #0099cc, 0 0 20px rgba(0, 255, 255, 0.5);
+        }
+        
+        .next-level-btn:hover {
+            box-shadow: 0 8px 0 #0099cc, 0 0 30px rgba(0, 255, 255, 0.7);
+        }
+        
+        .next-level-btn:active {
+            box-shadow: 0 0 0 #0099cc, 0 0 10px rgba(0, 255, 255, 0.3);
+        }
+        
+        .score-display {
+            font-size: 2rem; /* Using rem */
+            font-weight: bold;
+            margin-top: 10px;
+            background: linear-gradient(to right, #ff9900, #ff00ff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 0 10px rgba(255, 0, 255, 0.3);
+        }
+        
+        .game-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto 10px;
+            padding: 10px 20px;
+            background: rgba(90, 24, 154, 0.3);
+            border-radius: 50px;
+            box-shadow: 0 0 20px rgba(157, 78, 221, 0.3);
+        }
+        
+        .lives-display {
+            display: flex;
+            align-items: center;
+        }
+        
+        .life-icon {
+            width: 25px;
+            height: 25px;
+            margin-right: 5px;
+            background: linear-gradient(135deg, #ff0080, #ff00ff);
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(255, 0, 255, 0.7);
+        }
+        
+        .level-display {
+            font-size: 1.5rem; /* Using rem */
+            font-weight: bold;
+            color: #00ffff;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        }
+        
+        .power-ups {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 15;
+        }
+        
+        .power-up {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem; /* Using rem */
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .power-up:hover {
+            transform: scale(1.1);
+        }
+        
+        .power-up:active {
+            transform: scale(0.9);
+        }
+        
+        .game-instructions {
+            background: rgba(90, 24, 154, 0.3);
+            border-radius: 20px;
+            padding: 15px;
+            margin-top: 20px;
+            box-shadow: 0 0 20px rgba(157, 78, 221, 0.3);
+        }
+        
+        .sparkle {
+            position: absolute;
+            pointer-events: none;
+            width: 10px;
+            height: 10px;
+            background: #fff;
+            border-radius: 50%;
+            filter: blur(2px);
+            opacity: 0;
+        }
+        
+        @keyframes sparkle-animation {
+            0% { transform: scale(0); opacity: 1; }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
+        
+        .footer {
+            background: linear-gradient(90deg, rgba(90, 24, 154, 0.3), rgba(157, 78, 221, 0.3));
+            padding: 15px;
+            border-radius: 20px 20px 0 0; /* Rounded top corners */
+            box-shadow: 0 0 20px rgba(157, 78, 221, 0.3);
+            margin-top: 30px;
+        }
+        
+        .level-progress {
+            display: flex;
+            justify-content: space-between; /* Ensure markers are spaced out */
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto 20px;
+            padding: 5px;
+            background: rgba(90, 24, 154, 0.3);
+            border-radius: 50px;
+            overflow: hidden; /* Clips content if markers are too wide */
+        }
+        
+        .level-marker {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem; /* Using rem */
+            font-weight: bold;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s;
+            flex-shrink: 0; /* Prevent shrinking if many markers */
+        }
+        
+        .level-marker.active {
+            background: linear-gradient(135deg, #ff9900, #ff00ff);
+            border: 2px solid #fff;
+            box-shadow: 0 0 10px rgba(255, 0, 255, 0.7);
+            transform: scale(1.2);
+        }
+        
+        .level-marker.completed {
+            background: linear-gradient(135deg, #00ccff, #00ffff);
+            border: 2px solid #fff;
+        }
+        
+        .portal {
+            position: absolute;
+            width: 80%;
+            height: 80%;
+            top: 10%;
+            left: 10%;
+            z-index: 4;
+            animation: portal-spin 3s linear infinite;
+        }
+        
+        .portal-ring {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: 5px solid transparent;
+            border-radius: 50%;
+            border-top-color: #00ffff;
+            border-bottom-color: #ff00ff;
+            animation: portal-pulse 2s ease-in-out infinite alternate;
+        }
+        
+        .portal-center {
+            position: absolute;
+            width: 60%;
+            height: 60%;
+            top: 20%;
+            left: 20%;
+            background: radial-gradient(circle at center, #fff, #00ffff, #0000ff);
+            border-radius: 50%;
+            opacity: 0.8;
+            animation: portal-glow 2s ease-in-out infinite alternate;
+        }
+        
+        @keyframes portal-spin {
+            0% { transform: rotate(0); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes portal-pulse {
+            0% { transform: scale(0.9); }
+            100% { transform: scale(1.1); }
+        }
+        
+        @keyframes portal-glow {
+            0% { opacity: 0.5; filter: blur(2px); }
+            100% { opacity: 0.9; filter: blur(4px); }
+        }
+        
+        .item {
+            position: absolute;
+            width: 60%;
+            height: 60%;
+            top: 20%;
+            left: 20%;
+            z-index: 4;
+            animation: item-float 2s infinite ease-in-out;
+        }
+        
+        @keyframes item-float {
+            0% { transform: translateY(0) rotate(0); }
+            50% { transform: translateY(-5px) rotate(10deg); }
+            100% { transform: translateY(0) rotate(0); }
+        }
+        
+        .speed-item {
+            background: radial-gradient(circle at center, #fff, #ffff00);
+            border-radius: 50%;
+            box-shadow: 0 0 15px rgba(255, 255, 0, 0.7);
+        }
+        
+        .speed-item::after {
+            content: "⚡";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.5rem; /* Using rem */
+        }
+        
+        .bomb-item {
+            background: radial-gradient(circle at center, #fff, #ff0000);
+            border-radius: 50%;
+            box-shadow: 0 0 15px rgba(255, 0, 0, 0.7);
+        }
+        
+        .bomb-item::after {
+            content: "💣";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.5rem; /* Using rem */
+        }
+        
+        .range-item {
+            background: radial-gradient(circle at center, #fff, #00ff00);
+            border-radius: 50%;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.7);
+        }
+        
+        .range-item::after {
+            content: "🔥";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.5rem; /* Using rem */
+        }
+        
+        .life-item {
+            background: radial-gradient(circle at center, #fff, #ff00ff);
+            border-radius: 50%;
+            box-shadow: 0 0 15px rgba(255, 0, 255, 0.7);
+        }
+        
+        .life-item::after {
+            content: "❤️";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.5rem; /* Using rem */
+        }
+    </style>
+</head>
+<body>
+    <div class="min-h-screen flex flex-col py-8">
+        <header class="text-center mb-6">
+            <h1 class="text-4xl md:text-5xl font-bold game-title mb-2">真是神爆了</h1>
+            <h2 class="text-2xl md:text-3xl text-cyan-300 mt-2" style="text-shadow: 0 0 10px #00ffff;">✨ 彈彈的愛上遊戲系統 ✨</h2>
+        </header>
+        
+        <div class="level-progress">
+            <div class="level-marker active" data-level="1">1</div>
+            <div class="level-marker" data-level="2">2</div>
+            <div class="level-marker" data-level="3">3</div>
+            <div class="level-marker" data-level="4">4</div>
+            <div class="level-marker" data-level="5">5</div>
+            <div class="level-marker" data-level="6">6</div>
+            <div class="level-marker" data-level="7">7</div>
+            <div class="level-marker" data-level="8">8</div>
+            <div class="level-marker" data-level="9">9</div>
+            <div class="level-marker" data-level="10">10</div>
+        </div>
+        
+        <main class="flex-grow flex flex-col items-center justify-center px-4">
+            <div class="game-stats">
+                <div class="lives-display" id="livesDisplay"></div>
+                <div class="score-display">分數: <span id="score">0</span></div>
+                <div class="level-display">Level <span id="levelNumber">1</span></div>
+            </div>
+            
+            <div class="game-container">
+                <div class="game-grid" id="gameGrid"></div>
+                <div class="power-ups">
+                    <div class="power-up" id="speedPowerUp" title="速度提升 (50分)">⚡</div>
+                    <div class="power-up" id="bombPowerUp" title="炸彈數量+1 (50分)">💣</div>
+                </div>
+                <div class="game-over" id="gameOver">
+                    <div>遊戲結束!</div>
+                    <div class="mt-4 text-2xl">最終分數: <span id="finalScore">0</span></div>
+                    <button class="btn" id="restartBtn">重新開始</button>
+                </div>
+                <div class="level-complete" id="levelComplete">
+                    <div>關卡完成!</div>
+                    <div class="mt-4 text-2xl">獲得分數: <span id="levelScore">0</span></div>
+                    <button class="btn next-level-btn" id="nextLevelBtn">下一關</button>
+                </div>
+                <div class="game-complete" id="gameComplete">
+                    <div>恭喜通關!</div>
+                    <div class="mt-4 text-2xl">總分數: <span id="totalScore">0</span></div>
+                    <button class="btn" id="playAgainBtn">再玩一次</button>
+                </div>
+            </div>
+            
+            <div class="controls mt-6">
+                <div></div>
+                <div class="control-btn" id="upBtn" aria-label="向上移動">↑</div>
+                <div></div>
+                <div class="control-btn" id="leftBtn" aria-label="向左移動">←</div>
+                <div class="control-btn bomb-btn" id="bombBtn" aria-label="放置炸彈">💣</div>
+                <div class="control-btn" id="rightBtn" aria-label="向右移動">→</div>
+                <div></div>
+                <div class="control-btn" id="downBtn" aria-label="向下移動">↓</div>
+                <div></div>
+            </div>
+            
+            <div class="game-instructions mt-4 text-center text-sm text-cyan-200 max-w-md">
+                <p class="mb-2">🎮 使用方向鍵移動，空格鍵放置炸彈 (或點擊螢幕按鈕)</p>
+                <p>💥 炸毀方塊獲得分數和道具，小心怪獸和自己的炸彈！</p>
+                <p>💡 點擊右上角⚡或💣圖示可用分數購買能力 (各50分)</p>
+            </div>
+        </main>
+        
+        <footer class="footer text-center text-gray-300 text-sm">
+            <p>Copyright © Liyuchiutiger Gongminshen</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const gameGrid = document.getElementById('gameGrid');
+            const scoreDisplay = document.getElementById('score');
+            const finalScoreDisplay = document.getElementById('finalScore');
+            const levelScoreDisplay = document.getElementById('levelScore');
+            const totalScoreDisplay = document.getElementById('totalScore');
+            const levelNumberDisplay = document.getElementById('levelNumber');
+            const gameOverScreen = document.getElementById('gameOver');
+            const levelCompleteScreen = document.getElementById('levelComplete');
+            const gameCompleteScreen = document.getElementById('gameComplete');
+            const restartBtn = document.getElementById('restartBtn');
+            const nextLevelBtn = document.getElementById('nextLevelBtn');
+            const playAgainBtn = document.getElementById('playAgainBtn');
+            const livesDisplay = document.getElementById('livesDisplay');
+            const levelMarkers = document.querySelectorAll('.level-marker');
+            
+            // Game configuration
+            const gridSize = 11;
+            let playerPosition = { x: 1, y: 1 };
+            let bombs = [];
+            let explosions = [];
+            let blocks = [];
+            let monsters = [];
+            let items = [];
+            let portal = null;
+            let score = 0;
+            let lives = 3;
+            let level = 1;
+            const maxLevel = 10; // Corrected: was maxLevel
+            let gameActive = true;
+            let playerSpeed = 1; // Movement step, not animation speed
+            let bombCount = 1;
+            let bombRange = 1;
+            let bombsPlaced = 0;
+            let monsterSpeed = 1000; // milliseconds between monster moves
+            let monsterInterval;
+            
+            // Sound effects (using AudioContext)
+            let audioContext;
+            
+            function initAudio() {
+                if (audioContext) return; // Initialize only once
+                try {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                } catch (e) {
+                    console.warn('Web Audio API not supported');
+                }
+            }
+            // Try to initialize audio context on user interaction
+            document.body.addEventListener('click', initAudio, { once: true });
+            document.body.addEventListener('keydown', initAudio, { once: true });
+            
+            function playSound(type) {
+                if (!audioContext || audioContext.state === 'suspended') {
+                    audioContext?.resume(); // Resume if suspended
+                }
+                if (!audioContext) return;
+                
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                const now = audioContext.currentTime;
+
+                switch(type) {
+                    case 'move':
+                        oscillator.type = 'sine';
+                        oscillator.frequency.setValueAtTime(440, now);
+                        gainNode.gain.setValueAtTime(0.05, now); // Softer sound
+                        gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+                        oscillator.start(now);
+                        oscillator.stop(now + 0.05);
+                        break;
+                    case 'bomb':
+                        oscillator.type = 'triangle';
+                        oscillator.frequency.setValueAtTime(220, now);
+                        gainNode.gain.setValueAtTime(0.15, now);
+                        gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+                        oscillator.start(now);
+                        oscillator.stop(now + 0.2);
+                        break;
+                    case 'explosion':
+                        oscillator.type = 'sawtooth';
+                        oscillator.frequency.setValueAtTime(100, now);
+                        gainNode.gain.setValueAtTime(0.2, now);
+                        oscillator.frequency.exponentialRampToValueAtTime(20, now + 0.4);
+                        gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+                        oscillator.start(now);
+                        oscillator.stop(now + 0.4);
+                        break;
+                    case 'point':
+                        oscillator.type = 'sine';
+                        oscillator.frequency.setValueAtTime(660, now);
+                        gainNode.gain.setValueAtTime(0.1, now);
+                        oscillator.frequency.setValueAtTime(880, now + 0.05);
+                        gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+                        oscillator.start(now);
+                        oscillator.stop(now + 0.1);
+                        break;
+                    case 'monster_die': // Differentiated monster die sound
+                        oscillator.type = 'square';
+                        oscillator.frequency.setValueAtTime(150, now);
+                        gainNode.gain.setValueAtTime(0.15, now);
+                        oscillator.frequency.linearRampToValueAtTime(300, now + 0.2);
+                        gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+                        oscillator.start(now);
+                        oscillator.stop(now + 0.3);
+                        break;
+                    case 'player_hit': // Differentiated player hit sound
+                        oscillator.type = 'noise'; // Use noise for a hit sound
+                        gainNode.gain.setValueAtTime(0.2, now);
+                        gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+                        oscillator.start(now);
+                        oscillator.stop(now + 0.2);
+                        break;
+                    case 'item':
+                        oscillator.type = 'sine';
+                        oscillator.frequency.setValueAtTime(880, now);
+                        gainNode.gain.setValueAtTime(0.15, now);
+                        oscillator.frequency.setValueAtTime(1320, now + 0.07);
+                        oscillator.frequency.setValueAtTime(1760, now + 0.14);
+                        gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+                        oscillator.start(now);
+                        oscillator.stop(now + 0.2);
+                        break;
+                    case 'levelup':
+                        const freqsLevelUp = [440, 554.37, 659.25, 880]; // C4, D#4, E4, A4
+                        gainNode.gain.setValueAtTime(0.2, now);
+                        freqsLevelUp.forEach((freq, i) => {
+                            oscillator.frequency.setValueAtTime(freq, now + i * 0.15);
+                        });
+                        gainNode.gain.exponentialRampToValueAtTime(0.001, now + freqsLevelUp.length * 0.15);
+                        oscillator.start(now);
+                        oscillator.stop(now + freqsLevelUp.length * 0.15);
+                        break;
+                    case 'gameover':
+                        oscillator.type = 'sine';
+                        oscillator.frequency.setValueAtTime(440, now);
+                        oscillator.frequency.exponentialRampToValueAtTime(110, now + 1);
+                        gainNode.gain.setValueAtTime(0.25, now);
+                        gainNode.gain.exponentialRampToValueAtTime(0.001, now + 1);
+                        oscillator.start(now);
+                        oscillator.stop(now + 1);
+                        break;
+                    case 'complete': // Game complete fanfare
+                        const freqsComplete = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+                        gainNode.gain.setValueAtTime(0.2, now);
+                        oscillator.type = 'triangle';
+                        freqsComplete.forEach((freq, i) => {
+                            oscillator.frequency.setValueAtTime(freq, now + i * 0.2);
+                        });
+                        gainNode.gain.exponentialRampToValueAtTime(0.001, now + freqsComplete.length * 0.2 + 0.2);
+                        oscillator.start(now);
+                        oscillator.stop(now + freqsComplete.length * 0.2 + 0.2);
+                        break;
+                }
+            }
+            
+            function createSparkle(x, y) {
+                const sparkle = document.createElement('div');
+                sparkle.classList.add('sparkle');
+                sparkle.style.left = `${x}px`;
+                sparkle.style.top = `${y}px`;
+                sparkle.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 70%)`;
+                document.body.appendChild(sparkle);
+                
+                sparkle.style.animation = `sparkle-animation ${0.5 + Math.random() * 0.5}s forwards`;
+                
+                setTimeout(() => {
+                    sparkle.remove();
+                }, 1000);
+            }
+            
+            function updateLevelMarkers() {
+                levelMarkers.forEach(marker => {
+                    const markerLevel = parseInt(marker.dataset.level);
+                    marker.classList.remove('active', 'completed');
+                    
+                    if (markerLevel < level) {
+                        marker.classList.add('completed');
+                    } else if (markerLevel === level) {
+                        marker.classList.add('active');
+                    }
+                });
+            }
+            
+            function initGame() {
+                clearInterval(monsterInterval);
+                gameGrid.innerHTML = '';
+                playerPosition = { x: 1, y: 1 };
+                bombs = [];
+                explosions = [];
+                blocks = [];
+                monsters = [];
+                items = [];
+                portal = null;
+                bombsPlaced = 0;
+                gameActive = true;
+                
+                if (level === 1) { // Full reset for new game
+                    score = 0;
+                    lives = 3;
+                    playerSpeed = 1; 
+                    bombCount = 1;
+                    bombRange = 1;
+                }
+                
+                scoreDisplay.textContent = score;
+                levelNumberDisplay.textContent = level;
+                gameOverScreen.style.display = 'none';
+                levelCompleteScreen.style.display = 'none';
+                gameCompleteScreen.style.display = 'none';
+                updateLives();
+                updateLevelMarkers();
+                
+                const blockDensity = Math.min(0.3 + (level * 0.025), 0.6);
+                const monsterCount = Math.min(1 + Math.floor(level / 2), 6); 
+                monsterSpeed = Math.max(1000 - (level * 60), 250); 
+                
+                for (let y = 0; y < gridSize; y++) {
+                    for (let x = 0; x < gridSize; x++) {
+                        const cell = document.createElement('div');
+                        cell.classList.add('cell');
+                        cell.dataset.x = x;
+                        cell.dataset.y = y;
+                        
+                        if (x === 0 || y === 0 || x === gridSize - 1 || y === gridSize - 1 || 
+                            (x % 2 === 0 && y % 2 === 0)) {
+                            cell.classList.add('wall');
+                        } else {
+                            if (!((x <= 2 && y === 1) || (x === 1 && y <= 2)) && Math.random() < blockDensity) { // Avoid player start area
+                                cell.classList.add('block');
+                                blocks.push({ x, y });
+                            } else {
+                                cell.classList.add('empty');
+                            }
+                        }
+                        gameGrid.appendChild(cell);
+                    }
+                }
+                
+                updatePlayerPosition();
+                
+                for (let i = 0; i < monsterCount; i++) {
+                    addMonster();
+                }
+                
+                startMonsterMovement();
+            }
+            
+            function addMonster() {
+                let x, y;
+                let validPosition = false;
+                let attempts = 0; // Prevent infinite loop
+                
+                while (!validPosition && attempts < 100) {
+                    x = Math.floor(Math.random() * (gridSize - 2)) + 1;
+                    y = Math.floor(Math.random() * (gridSize - 2)) + 1;
+                    
+                    const cell = getCellAt(x, y);
+                    if (cell && cell.classList.contains('empty') && 
+                        (Math.abs(x - playerPosition.x) > 3 || Math.abs(y - playerPosition.y) > 3) &&
+                        !monsters.some(m => m.x === x && m.y === y) &&
+                        !(x % 2 === 0 && y % 2 === 0)) { // Avoid spawning on indestructible wall spots
+                        validPosition = true;
+                    }
+                    attempts++;
+                }
+
+                if (validPosition) {
+                    const monster = { x, y };
+                    monsters.push(monster);
+                    renderMonster(monster);
+                }
+            }
+            
+            function renderMonster(monster) {
+                const cell = getCellAt(monster.x, monster.y);
+                if (!cell) return;
+                
+                // Remove existing monster if any (e.g. during move)
+                const existingMonsterEl = cell.querySelector('.monster');
+                if (existingMonsterEl) existingMonsterEl.remove();
+
+                const monsterElement = document.createElement('div');
+                monsterElement.classList.add('monster');
+                
+                const monsterBody = document.createElement('div');
+                monsterBody.classList.add('monster-body');
+                const monsterFace = document.createElement('div');
+                monsterFace.classList.add('monster-face');
+                const monsterEyes = document.createElement('div');
+                monsterEyes.classList.add('monster-eyes');
+                const leftEye = document.createElement('div');
+                leftEye.classList.add('monster-eye', 'left');
+                const rightEye = document.createElement('div');
+                rightEye.classList.add('monster-eye', 'right');
+                const monsterMouth = document.createElement('div');
+                monsterMouth.classList.add('monster-mouth');
+                const leftTooth = document.createElement('div');
+                leftTooth.classList.add('monster-teeth', 'left');
+                const rightTooth = document.createElement('div');
+                rightTooth.classList.add('monster-teeth', 'right');
+                
+                monsterMouth.appendChild(leftTooth);
+                monsterMouth.appendChild(rightTooth);
+                monsterEyes.appendChild(leftEye);
+                monsterEyes.appendChild(rightEye);
+                monsterFace.appendChild(monsterEyes);
+                monsterFace.appendChild(monsterMouth);
+                monsterBody.appendChild(monsterFace);
+                monsterElement.appendChild(monsterBody);
+                
+                cell.appendChild(monsterElement);
+            }
+            
+            function startMonsterMovement() {
+                clearInterval(monsterInterval);
+                monsterInterval = setInterval(() => {
+                    if (!gameActive) return;
+                    monsters.forEach(monster => moveMonster(monster));
+                }, monsterSpeed);
+            }
+            
+            function moveMonster(monster) {
+                const prevCell = getCellAt(monster.x, monster.y);
+                if (prevCell) {
+                    const monsterElement = prevCell.querySelector('.monster');
+                    if (monsterElement) monsterElement.remove();
+                }
+                
+                let directions = [];
+                if (Math.random() < 0.75) { // Increased tendency to chase player
+                    if (monster.x < playerPosition.x) directions.push({ dx: 1, dy: 0 });
+                    else if (monster.x > playerPosition.x) directions.push({ dx: -1, dy: 0 });
+                    if (monster.y < playerPosition.y) directions.push({ dx: 0, dy: 1 });
+                    else if (monster.y > playerPosition.y) directions.push({ dx: 0, dy: -1 });
+                    
+                    // Add other directions as fallback if direct path is blocked
+                    if (monster.x === playerPosition.x) { // Align X, try Y
+                        if (monster.y < playerPosition.y) directions.unshift({dx: 0, dy: 1}); else directions.unshift({dx:0, dy:-1});
+                    }
+                    if (monster.y === playerPosition.y) { // Align Y, try X
+                         if (monster.x < playerPosition.x) directions.unshift({dx: 1, dy: 0}); else directions.unshift({dx:-1, dy:0});
+                    }
+
+                }
+                // Add all possible directions if empty or random move
+                 const allDirections = [ { dx: 1, dy: 0 }, { dx: -1, dy: 0 }, { dx: 0, dy: 1 }, { dx: 0, dy: -1 } ];
+                 allDirections.sort(() => Math.random() - 0.5); // Shuffle
+                 directions = [...new Set([...directions, ...allDirections])]; // Unique directions, player-chasing first
+
+                let moved = false;
+                for (const dir of directions) {
+                    const newX = monster.x + dir.dx;
+                    const newY = monster.y + dir.dy;
+                    
+                    if (isCellEmptyForMonster(newX, newY) && 
+                        !monsters.some(m => m !== monster && m.x === newX && m.y === newY)) {
+                        monster.x = newX;
+                        monster.y = newY;
+                        moved = true;
+                        break;
+                    }
+                }
+                
+                renderMonster(monster); // Render monster at new or old position
+                
+                if (monster.x === playerPosition.x && monster.y === playerPosition.y) {
+                    playerHit();
+                }
+            }
+
+            function isCellEmptyForMonster(x, y) { // Monsters can't move through bombs
+                const cell = getCellAt(x, y);
+                if (!cell) return false;
+                return !cell.classList.contains('wall') && 
+                       !cell.classList.contains('block') &&
+                       !cell.querySelector('.bomb'); // Check for bomb element
+            }
+            
+            function updatePlayerPosition() {
+                document.querySelectorAll('.player').forEach(p => p.remove());
+                
+                const cell = getCellAt(playerPosition.x, playerPosition.y);
+                if (cell) {
+                    const playerElement = document.createElement('div');
+                    playerElement.classList.add('player');
+                    const playerBody = document.createElement('div');
+                    playerBody.classList.add('player-body');
+                    const playerFace = document.createElement('div');
+                    playerFace.classList.add('player-face');
+                    const playerEyes = document.createElement('div');
+                    playerEyes.classList.add('player-eyes');
+                    const leftEye = document.createElement('div');
+                    leftEye.classList.add('player-eye', 'left');
+                    const rightEye = document.createElement('div');
+                    rightEye.classList.add('player-eye', 'right');
+                    const playerMouth = document.createElement('div');
+                    playerMouth.classList.add('player-mouth');
+                    
+                    playerEyes.appendChild(leftEye);
+                    playerEyes.appendChild(rightEye);
+                    playerFace.appendChild(playerEyes);
+                    playerFace.appendChild(playerMouth);
+                    playerBody.appendChild(playerFace);
+                    playerElement.appendChild(playerBody);
+                    cell.appendChild(playerElement);
+                    
+                    const itemIndex = items.findIndex(item => item.x === playerPosition.x && item.y === playerPosition.y);
+                    if (itemIndex !== -1) {
+                        collectItem(items[itemIndex]);
+                        items.splice(itemIndex, 1);
+                    }
+                    
+                    if (portal && playerPosition.x === portal.x && playerPosition.y === portal.y) {
+                        completeLevel();
+                    }
+                    
+                    if (monsters.some(m => m.x === playerPosition.x && m.y === playerPosition.y)) {
+                        playerHit();
+                    }
+                }
+            }
+            
+            function collectItem(item) {
+                const itemCell = getCellAt(item.x, item.y);
+                if(itemCell){
+                    const itemElement = itemCell.querySelector('.item');
+                    if (itemElement) itemElement.remove();
+                }
+                
+                playSound('item');
+                
+                const cell = getCellAt(item.x, item.y);
+                if(cell){
+                    const rect = cell.getBoundingClientRect();
+                    for (let i = 0; i < 10; i++) {
+                        setTimeout(() => createSparkle(rect.left + Math.random() * rect.width, rect.top + Math.random() * rect.height), i * 50);
+                    }
+                }
+                
+                switch (item.type) {
+                    case 'speed': playerSpeed = Math.min(playerSpeed + 0.25, 2); break; // Max speed 2 cells
+                    case 'bomb': bombCount++; break;
+                    case 'range': bombRange++; break;
+                    case 'life': lives++; updateLives(); break;
+                }
+                
+                score += 20;
+                scoreDisplay.textContent = score;
+            }
+            
+            function updateLives() {
+                livesDisplay.innerHTML = '';
+                for (let i = 0; i < lives; i++) {
+                    const lifeIcon = document.createElement('div');
+                    lifeIcon.classList.add('life-icon');
+                    livesDisplay.appendChild(lifeIcon);
+                }
+            }
+            
+            function getCellAt(x, y) {
+                return gameGrid.querySelector(`.cell[data-x="${x}"][data-y="${y}"]`);
+            }
+            
+            function isCellEmptyForPlayer(x, y) { // Player can't walk through bombs
+                const cell = getCellAt(x, y);
+                if (!cell) return false;
+                return !cell.classList.contains('wall') && 
+                       !cell.classList.contains('block') &&
+                       !cell.querySelector('.bomb');
+            }
+            
+            function movePlayer(dx, dy) {
+                if (!gameActive) return;
+                
+                const newX = playerPosition.x + dx * playerSpeed; // playerSpeed is step size
+                const newY = playerPosition.y + dy * playerSpeed;
+
+                // Allow movement by 1 unit if playerSpeed > 1 and direct path is blocked
+                let finalX = newX;
+                let finalY = newY;
+
+                if (playerSpeed > 1) {
+                    if (!isCellEmptyForPlayer(newX, newY)) { // Try moving by 1 if full step is blocked
+                        finalX = playerPosition.x + dx;
+                        finalY = playerPosition.y + dy;
+                    }
+                }
+                
+                if (isCellEmptyForPlayer(finalX, finalY)) {
+                    playerPosition.x = finalX;
+                    playerPosition.y = finalY;
+                    updatePlayerPosition();
+                    playSound('move');
+                    
+                    const cell = getCellAt(finalX, finalY);
+                    if(cell){
+                        const rect = cell.getBoundingClientRect();
+                        createSparkle(rect.left + rect.width / 2, rect.top + rect.height / 2);
+                    }
+                }
+            }
+            
+            function placeBomb() {
+                if (!gameActive || bombsPlaced >= bombCount) return;
+                
+                const { x, y } = playerPosition;
+                const cell = getCellAt(x, y);
+                if (!cell || cell.querySelector('.bomb')) return;
+                
+                const bombElement = document.createElement('div');
+                bombElement.classList.add('bomb');
+                const bombBody = document.createElement('div');
+                bombBody.classList.add('bomb-body');
+                const bombFuse = document.createElement('div');
+                bombFuse.classList.add('bomb-fuse');
+                const bombSpark = document.createElement('div');
+                bombSpark.classList.add('bomb-spark');
+                const bombTimerDisplay = document.createElement('div'); // Renamed to avoid conflict
+                bombTimerDisplay.classList.add('bomb-timer');
+                bombTimerDisplay.textContent = '3';
+                
+                bombElement.appendChild(bombBody);
+                bombElement.appendChild(bombFuse);
+                bombElement.appendChild(bombSpark);
+                bombElement.appendChild(bombTimerDisplay);
+                cell.appendChild(bombElement);
+                
+                playSound('bomb');
+                
+                const bomb = { x, y, timerValue: 3, range: bombRange, element: bombElement }; // Added timerValue
+                bombs.push(bomb);
+                bombsPlaced++;
+                
+                let timerInterval = setInterval(() => {
+                    if (!gameActive) {
+                        clearInterval(timerInterval);
+                        return;
+                    }
+                    
+                    bomb.timerValue--;
+                    if (bombTimerDisplay) bombTimerDisplay.textContent = bomb.timerValue;
+                    
+                    if (bomb.timerValue <= 0) {
+                        clearInterval(timerInterval);
+                        explodeBomb(bomb);
+                    }
+                }, 1000);
+            }
+            
+            function explodeBomb(bomb) {
+                bombs = bombs.filter(b => b !== bomb);
+                bombsPlaced--;
+                
+                if (bomb.element) bomb.element.remove();
+                playSound('explosion');
+                
+                const explosionPaths = {
+                    center: [{ dx: 0, dy: 0 }],
+                    right: [], left: [], down: [], up: []
+                };
+
+                for (let i = 1; i <= bomb.range; i++) {
+                    explosionPaths.right.push({ dx: i, dy: 0 });
+                    explosionPaths.left.push({ dx: -i, dy: 0 });
+                    explosionPaths.down.push({ dx: 0, dy: i });
+                    explosionPaths.up.push({ dx: 0, dy: -i });
+                }
+
+                const allExplosionCoords = [];
+
+                processExplosionPath(bomb.x, bomb.y, explosionPaths.center, allExplosionCoords);
+                processExplosionPath(bomb.x, bomb.y, explosionPaths.right, allExplosionCoords);
+                processExplosionPath(bomb.x, bomb.y, explosionPaths.left, allExplosionCoords);
+                processExplosionPath(bomb.x, bomb.y, explosionPaths.down, allExplosionCoords);
+                processExplosionPath(bomb.x, bomb.y, explosionPaths.up, allExplosionCoords);
+
+                // Remove duplicates if any from path overlaps (though should be minimal with this logic)
+                const uniqueExplosionCoords = Array.from(new Set(allExplosionCoords.map(c => `${c.x},${c.y}`)))
+                                             .map(s => { const p = s.split(','); return {x: parseInt(p[0]), y: parseInt(p[1])}; });
+
+                uniqueExplosionCoords.forEach(coord => {
+                    handleExplosionAt(coord.x, coord.y);
+                });
+            }
+
+            function processExplosionPath(startX, startY, path, allCoords) {
+                for (const dir of path) {
+                    const ex = startX + dir.dx;
+                    const ey = startY + dir.dy;
+
+                    if (ex < 0 || ex >= gridSize || ey < 0 || ey >= gridSize) break; // Out of bounds
+
+                    const cell = getCellAt(ex, ey);
+                    if (!cell) break;
+
+                    allCoords.push({x: ex, y: ey});
+
+                    if (cell.classList.contains('wall')) break; // Explosion stops at hard walls
+                    if (cell.classList.contains('block')) { // Explosion destroys block and stops
+                         // handleExplosionAt will take care of block destruction
+                        break; 
+                    }
+                }
+            }
+
+            function handleExplosionAt(explosionX, explosionY) {
+                 const cell = getCellAt(explosionX, explosionY);
+                 if (!cell || cell.classList.contains('wall')) return; // Should already be filtered by processExplosionPath
+
+                const explosionElement = document.createElement('div');
+                explosionElement.classList.add('explosion');
+                const explosionCenter = document.createElement('div');
+                explosionCenter.classList.add('explosion-center');
+                explosionElement.appendChild(explosionCenter);
+                cell.appendChild(explosionElement);
+                
+                const explosionData = { x: explosionX, y: explosionY, element: explosionElement };
+                explosions.push(explosionData);
+                
+                if(cell){
+                    const rect = cell.getBoundingClientRect();
+                    for (let i = 0; i < 5; i++) {
+                        setTimeout(() => createSparkle(rect.left + Math.random() * rect.width, rect.top + Math.random() * rect.height), i * 100);
+                    }
+                }
+                
+                setTimeout(() => {
+                    explosionElement.remove();
+                    explosions = explosions.filter(e => e !== explosionData);
+                }, 500);
+                
+                if (cell.classList.contains('block')) {
+                    cell.classList.remove('block');
+                    cell.classList.add('empty');
+                    blocks = blocks.filter(b => !(b.x === explosionX && b.y === explosionY));
+                    score += 10;
+                    scoreDisplay.textContent = score;
+                    playSound('point');
+                    
+                    if (Math.random() < 0.35) spawnItem(explosionX, explosionY); // Slightly higher item chance
+                    if (blocks.length === 0 && !portal) spawnPortal();
+                }
+                
+                if (explosionX === playerPosition.x && explosionY === playerPosition.y) {
+                    playerHit();
+                }
+                
+                const monsterIndex = monsters.findIndex(m => m.x === explosionX && m.y === explosionY);
+                if (monsterIndex !== -1) {
+                    killMonster(monsters[monsterIndex]);
+                    monsters.splice(monsterIndex, 1);
+                }
+                
+                const chainBomb = bombs.find(b => b.x === explosionX && b.y === explosionY && b.timerValue > 0); // Ensure not already exploding
+                if (chainBomb) {
+                    chainBomb.timerValue = 0; // Trigger immediate explosion in next cycle (handled by its own interval)
+                    const timerDisplay = chainBomb.element.querySelector('.bomb-timer');
+                    if(timerDisplay) timerDisplay.textContent = '0';
+                    // The bomb's own interval will pick this up and call explodeBomb
+                }
+            }
+            
+            function killMonster(monster) {
+                const cell = getCellAt(monster.x, monster.y);
+                if (!cell) return;
+                
+                const monsterElement = cell.querySelector('.monster');
+                if (monsterElement) {
+                    monsterElement.style.animation = 'monster-die 0.5s forwards';
+                    setTimeout(() => monsterElement.remove(), 500);
+                }
+                
+                score += 30;
+                scoreDisplay.textContent = score;
+                playSound('monster_die');
+                
+                if(cell){
+                    const rect = cell.getBoundingClientRect();
+                    for (let i = 0; i < 15; i++) {
+                        setTimeout(() => createSparkle(rect.left + Math.random() * rect.width, rect.top + Math.random() * rect.height), i * 30);
+                    }
+                }
+                 if (blocks.length === 0 && monsters.length === 0 && !portal) { // Check if all monsters also cleared for portal
+                    spawnPortal();
+                }
+            }
+            
+            function spawnItem(x, y) {
+                const cell = getCellAt(x, y);
+                if (!cell || cell.querySelector('.item')) return; // Don't spawn if item already there
+                
+                const itemTypes = ['speed', 'bomb', 'range', 'life'];
+                const weights = [0.3, 0.3, 0.3, 0.1]; 
+                let randomValue = Math.random();
+                let itemType = itemTypes[itemTypes.length -1]; // Default to last if somehow fails
+                
+                for (let i = 0; i < weights.length; i++) {
+                    if (randomValue < weights[i]) {
+                        itemType = itemTypes[i];
+                        break;
+                    }
+                    randomValue -= weights[i];
+                }
+                
+                const itemElement = document.createElement('div');
+                itemElement.classList.add('item', `${itemType}-item`);
+                cell.appendChild(itemElement);
+                items.push({ x, y, type: itemType });
+            }
+            
+            function spawnPortal() {
+                if (portal) return; // Only one portal
+
+                // Find a random empty cell that was previously a block or is just empty
+                const possiblePortalCells = [];
+                for (let y = 1; y < gridSize - 1; y++) {
+                    for (let x = 1; x < gridSize - 1; x++) {
+                        const cell = getCellAt(x,y);
+                        if (cell && cell.classList.contains('empty') && !(x % 2 === 0 && y % 2 === 0)) {
+                            // Check if it's NOT player position or monster position
+                            if (!((x === playerPosition.x && y === playerPosition.y) || monsters.some(m => m.x === x && m.y === y))) {
+                                possiblePortalCells.push({x,y});
+                            }
+                        }
+                    }
+                }
+                
+                if (possiblePortalCells.length > 0) {
+                    const portalPos = possiblePortalCells[Math.floor(Math.random() * possiblePortalCells.length)];
+                    portal = portalPos;
+                
+                    const cell = getCellAt(portal.x, portal.y);
+                    const portalElement = document.createElement('div');
+                    portalElement.classList.add('portal');
+                    const portalRing = document.createElement('div');
+                    portalRing.classList.add('portal-ring');
+                    const portalCenter = document.createElement('div');
+                    portalCenter.classList.add('portal-center');
+                    portalElement.appendChild(portalRing);
+                    portalElement.appendChild(portalCenter);
+                    cell.appendChild(portalElement);
+                } else {
+                    console.warn("No valid position to spawn portal.");
+                }
+            }
+            
+            let isInvincible = false;
+            function playerHit() {
+                if (isInvincible || !gameActive) return;
+
+                lives--;
+                updateLives();
+                playSound('player_hit');
+                
+                if (lives <= 0) {
+                    gameOver();
+                } else {
+                    isInvincible = true;
+                    const playerElement = document.querySelector('.player'); // This might select the wrong one if multiple exist
+                    if (playerElement) playerElement.style.animation = 'player-hit 1s';
+                    
+                    // Reset player position and grant temporary invincibility
+                    setTimeout(() => {
+                        playerPosition = { x: 1, y: 1 };
+                        updatePlayerPosition();
+                        const newPlayerElement = getCellAt(1,1)?.querySelector('.player');
+                        if (newPlayerElement) newPlayerElement.style.animation = 'player-hit 1s'; // Re-apply flash
+                        setTimeout(() => {
+                            isInvincible = false;
+                            if (newPlayerElement) newPlayerElement.style.animation = 'player-idle 1s infinite alternate'; // Restore idle
+                        }, 1500); // Invincibility duration
+                    }, 500); // Delay before respawn
+                }
+            }
+            
+            function completeLevel() {
+                if(!gameActive) return;
+                gameActive = false;
+                clearInterval(monsterInterval);
+                
+                const levelBonus = level * 50;
+                score += levelBonus;
+                
+                levelScoreDisplay.textContent = levelBonus;
+                scoreDisplay.textContent = score;
+                
+                if (level < maxLevel) {
+                    levelCompleteScreen.style.display = 'flex';
+                    playSound('levelup');
+                } else {
+                    totalScoreDisplay.textContent = score;
+                    gameCompleteScreen.style.display = 'flex';
+                    playSound('complete');
+                }
+            }
+            
+            function gameOver() {
+                gameActive = false;
+                clearInterval(monsterInterval);
+                finalScoreDisplay.textContent = score;
+                gameOverScreen.style.display = 'flex';
+                playSound('gameover');
+            }
+            
+            function nextLevel() {
+                level++;
+                // Retain some power-ups, or reset strategically
+                // For now, simple increment and full re-init of map
+                initGame();
+            }
+            
+            document.addEventListener('keydown', (e) => {
+                if (!gameActive) return;
+                
+                // Prevent page scroll on arrow keys / space
+                if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) {
+                    e.preventDefault();
+                }
+
+                switch (e.key) {
+                    case 'ArrowUp': movePlayer(0, -1); break;
+                    case 'ArrowDown': movePlayer(0, 1); break;
+                    case 'ArrowLeft': movePlayer(-1, 0); break;
+                    case 'ArrowRight': movePlayer(1, 0); break;
+                    case ' ': placeBomb(); break;
+                }
+            });
+            
+            document.getElementById('upBtn').addEventListener('click', () => movePlayer(0, -1));
+            document.getElementById('downBtn').addEventListener('click', () => movePlayer(0, 1));
+            document.getElementById('leftBtn').addEventListener('click', () => movePlayer(-1, 0));
+            document.getElementById('rightBtn').addEventListener('click', () => movePlayer(1, 0));
+            document.getElementById('bombBtn').addEventListener('click', placeBomb);
+            
+            function buyPowerUp(cost, action) {
+                if (score >= cost) {
+                    score -= cost;
+                    scoreDisplay.textContent = score;
+                    action();
+                    playSound('item');
+                    return true;
+                }
+                return false;
+            }
+
+            document.getElementById('speedPowerUp').addEventListener('click', () => {
+                if(buyPowerUp(50, () => playerSpeed = Math.min(playerSpeed + 0.25, 2) )){
+                    const btn = document.getElementById('speedPowerUp');
+                    const rect = btn.getBoundingClientRect();
+                    for (let i = 0; i < 10; i++) {
+                        setTimeout(() => createSparkle(rect.left + Math.random() * rect.width, rect.top + Math.random() * rect.height), i * 50);
+                    }
+                }
+            });
+            
+            document.getElementById('bombPowerUp').addEventListener('click', () => {
+                 if(buyPowerUp(50, () => bombCount++ )){
+                    const btn = document.getElementById('bombPowerUp');
+                    const rect = btn.getBoundingClientRect();
+                    for (let i = 0; i < 10; i++) {
+                        setTimeout(() => createSparkle(rect.left + Math.random() * rect.width, rect.top + Math.random() * rect.height), i * 50);
+                    }
+                }
+            });
+            
+            restartBtn.addEventListener('click', () => {
+                level = 1;
+                initGame();
+            });
+            
+            nextLevelBtn.addEventListener('click', nextLevel);
+            
+            playAgainBtn.addEventListener('click', () => {
+                level = 1;
+                initGame();
+            });
+            
+            // Add sparkles to title periodically
+            setInterval(() => {
+                const title = document.querySelector('.game-title');
+                if (title) {
+                    const rect = title.getBoundingClientRect();
+                    // Check if title is visible to avoid creating sparkles off-screen
+                    if (rect.width > 0 && rect.height > 0) { 
+                        createSparkle(
+                            rect.left + Math.random() * rect.width,
+                            rect.top + Math.random() * rect.height
+                        );
+                    }
+                }
+            }, 700); // Slower sparkle rate
+            
+            initGame();
+        });
+    </script>
+</body>
+</html>
